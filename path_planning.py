@@ -2,6 +2,25 @@
 
 import re
 
+class Graph(object):
+    def __init__(self, data=None):
+        if data is None:
+            self.G = {}
+        else:
+            print 'Not implemented yet'
+    def __str__(self):
+        return str(self.G)
+        
+    def add_node(self, node):
+        if self.G.has_key(node) is False:
+            self.G[node] = []
+
+    def add_edge(self, node_tail, node_head):
+        if self.G.has_key(node_tail):
+            self.G[node_tail].append(node_head)
+        else:
+            self.G[node_tail] = [node_head]
+        
 class Actions(object):
     d = {(-1,0):'Up', (1,0):'Down', (0,-1):'Left', (0,1):'Right'}
     def __init__(self, up=False, down=False, left = False, right = False):
@@ -20,6 +39,7 @@ class Actions(object):
         return '( ' + ', '.join([Actions.d[a] for a in self.actions]) + ' )'
 
         
+
 class Labyrinth(object):
     def __init__(self, lab):
         if isinstance(lab, tuple):
@@ -42,6 +62,7 @@ class Labyrinth(object):
             raise Exception, 'lab must be a tuple or string'
 
         self.get_action_space()
+        self.G = self.get_graph()
         
     def __str__(self):
         lines = []
@@ -95,7 +116,20 @@ class Labyrinth(object):
                                     left = self.cells[m-1][n-2] == 1)
         self.actions = actions
 
-        
+    def get_graph(self):
+        G = Graph()
+        for i in range(self.m):
+            for j in range(self.n):
+                if self.cells[i][j] == 1:
+                    G.add_node((i,j))
+                    actions = self.actions[i][j]
+                    for action in actions.actions:
+                        i_e = i + action[0]
+                        j_e = j + action[1]
+                        G.add_edge((i,j),(i_e,j_e))
+                    
+        return G
+                
 if __name__ == '__main__':
     print 'Testing path planning algorithms...'
     lab = '''\
@@ -107,4 +141,5 @@ x...xx
 xxxxxx'''
     l = Labyrinth(lab)
     print l
-    print l.actions[4][2]
+    #print l.actions[4][2]
+    print l.G
