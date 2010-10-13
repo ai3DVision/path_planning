@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import Queue
 
 class Graph(object):
     def __init__(self, data=None):
@@ -10,7 +11,10 @@ class Graph(object):
             print 'Not implemented yet'
     def __str__(self):
         return str(self.G)
-        
+    
+    def __iter__(self):
+        return iter(self.G.keys())    
+
     def add_node(self, node):
         if self.G.has_key(node) is False:
             self.G[node] = []
@@ -20,6 +24,16 @@ class Graph(object):
             self.G[node_tail].append(node_head)
         else:
             self.G[node_tail] = [node_head]
+
+    def get_nodes(self):
+        return self.G.keys()
+
+    def get_n_nodes(self):
+        return len(self.G.keys())
+
+    def successors(self, node):
+        return self.G[node]
+
         
 class Actions(object):
     d = {(-1,0):'Up', (1,0):'Down', (0,-1):'Left', (0,1):'Right'}
@@ -38,7 +52,8 @@ class Actions(object):
     def __str__(self):
         return '( ' + ', '.join([Actions.d[a] for a in self.actions]) + ' )'
 
-        
+    def __iter__(self):
+        return iter(self.actions)
 
 class Labyrinth(object):
     def __init__(self, lab):
@@ -123,13 +138,40 @@ class Labyrinth(object):
                 if self.cells[i][j] == 1:
                     G.add_node((i,j))
                     actions = self.actions[i][j]
-                    for action in actions.actions:
+                    for action in actions:
                         i_e = i + action[0]
                         j_e = j + action[1]
                         G.add_edge((i,j),(i_e,j_e))
                     
         return G
-                
+
+def forward_search(G, x_I, x_G):
+    unvisited = 'unvisited' #0
+    dead = 'dead' #1
+    alive = 'alive' #2
+    print 'Initial state:', x_I, 'Goal:', x_G
+    states = dict(zip(G.get_nodes(),[unvisited]*G.get_n_nodes()))
+    q = Queue.Queue()
+    q.put(x_I)
+    states[x_I] = alive
+    plan = []
+    while q.not_empty:
+        x = q.get()
+        if x == x_G:
+            print 'success!'
+            return plan
+        for node in G.successors(x):
+            #plan[x] = node
+            #plan[node] = x
+            plan.append((x,node))
+            if states[node] == unvisited:
+                states[node] = alive
+                q.put(node)
+            else:
+                pass # resolve duplicate ?
+    print 'Failure :('
+    return None
+    
 if __name__ == '__main__':
     print 'Testing path planning algorithms...'
     lab = '''\
@@ -140,6 +182,18 @@ xxx.xx
 x...xx
 xxxxxx'''
     l = Labyrinth(lab)
-    print l
+    #print l
     #print l.actions[4][2]
-    print l.G
+    #print l.G
+    #forward_search(l.G, (1,1), (1,1))
+    x_I = (1,1)
+    x_G = (4,3)
+    plan = forward_search(l.G, x_I, x_G)
+    a = [x_G]
+    #prev_node = x_G
+    ## while a[-1] != x_I:
+    ##     a.append(plan[a[-1]])
+    ##     print a
+    ##     break
+    ##     #prev_node = a[-1]
+    #print a
