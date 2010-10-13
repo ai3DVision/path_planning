@@ -154,23 +154,43 @@ def forward_search(G, x_I, x_G):
     q = Queue.Queue()
     q.put(x_I)
     states[x_I] = alive
-    plan = []
+    orig = []
+    dest = []
     while q.not_empty:
         x = q.get()
         if x == x_G:
             print 'success!'
-            return plan
+            return (orig, dest)
         for node in G.successors(x):
-            #plan[x] = node
-            #plan[node] = x
-            plan.append((x,node))
+            orig.append(x)
+            dest.append(node)
             if states[node] == unvisited:
                 states[node] = alive
                 q.put(node)
             else:
                 pass # resolve duplicate ?
+                print 'We have a duplicate. What do we do?'
     print 'Failure :('
     return None
+
+def plan_to_path(plan):
+    (o, d) = plan
+    i = d.index(x_G)
+    path = [x_G]
+    while True:
+        prev_node = o[i]
+        if prev_node == x_I:
+            break
+        path.append(prev_node)
+        i = d.index(prev_node)
+        while o.count(prev_node) > 0:
+            j = o.index(prev_node)
+            del(o[j])
+            del(d[j])
+    path.append(x_I)
+    path.reverse()
+    return path
+    
     
 if __name__ == '__main__':
     print 'Testing path planning algorithms...'
@@ -182,18 +202,9 @@ xxx.xx
 x...xx
 xxxxxx'''
     l = Labyrinth(lab)
-    #print l
-    #print l.actions[4][2]
-    #print l.G
-    #forward_search(l.G, (1,1), (1,1))
     x_I = (1,1)
     x_G = (4,3)
     plan = forward_search(l.G, x_I, x_G)
-    a = [x_G]
-    #prev_node = x_G
-    ## while a[-1] != x_I:
-    ##     a.append(plan[a[-1]])
-    ##     print a
-    ##     break
-    ##     #prev_node = a[-1]
-    #print a
+    path = plan_to_path(plan)
+    print path
+
