@@ -1,43 +1,88 @@
 #!/usr/bin/env python
 
+"""
+Some path planning algorithms.
+
+This file contains the implementation of some of the path planning algorithms
+discused in the book "Planning algorithms", by Steven LaValle.
+
+They have a didactic purpose. No effort is made in terms of efficency or
+robustnes.
+
+Alejandro Weinstein 2010
+"""
+
 import re
 import Queue
 
 class Graph(object):
-    def __init__(self, data=None):
-        if data is None:
-            self.G = {}
-        else:
-            print 'Not implemented yet'
+    """
+    Class for basic directed graphs.
+
+    For a more sophisticated, look at networkx. 
+    """
+    def __init__(self):
+        """Initialize an empty graph."""
+        self.G = {}
+        
     def __str__(self):
+        """Return the dictionary representation of the graph."""
         return str(self.G)
     
     def __iter__(self):
+        """Iterate over the vertices."""
         return iter(self.G.keys())    
 
     def add_node(self, node):
+        """Add a vertice to the graph.
+
+        Parameters
+        ----------
+        node: any inmutable object that can be used as a dictionary key
+        """
         if self.G.has_key(node) is False:
             self.G[node] = []
 
     def add_edge(self, node_tail, node_head):
+        """Add a directed edge between two vertices.
+
+        Parameters
+        ---------
+        node_tail: vertice corresponding to the tail of the edge
+        node_head: vertice corresponding to the head of the edge
+        """
         if self.G.has_key(node_tail):
             self.G[node_tail].append(node_head)
         else:
             self.G[node_tail] = [node_head]
 
     def get_nodes(self):
+        """Return a list with all the vertices."""
         return self.G.keys()
 
     def get_n_nodes(self):
+        """Return the number of vertices."""
         return len(self.G.keys())
 
     def successors(self, node):
+        """Return a list with all the successors of a vertice."""
         return self.G[node]
 
         
 class Actions(object):
+    """Class for the actions that can be taken from a given cell of a
+    labyrinth."""
     d = {(-1,0):'Up', (1,0):'Down', (0,-1):'Left', (0,1):'Right'}
     def __init__(self, up=False, down=False, left = False, right = False):
+        """Initialize the action with the set of possible actions.
+
+        Parameters
+        ----------
+        up: A True value indicate that it is possible to move up
+        down: A True value indicate that it is possible to move down
+        left: A True value indicate that it is possible to move left
+        right: A True value indicate that it is possible to move right
+        """
         actions = []
         if up:
             actions.append((-1,0))
@@ -50,13 +95,38 @@ class Actions(object):
         self.actions = tuple(actions)
 
     def __str__(self):
+        """String representation of the possible actions."""
         return '( ' + ', '.join([Actions.d[a] for a in self.actions]) + ' )'
 
     def __iter__(self):
+        """Return an iterator with the list of actions."""
         return iter(self.actions)
 
 class Labyrinth(object):
+    """Class for implementing a Labyrinth."""
     def __init__(self, lab):
+        """Initialize the class.
+
+        Parameters
+        ----------
+
+        lab: Data to initialize the Labyrinth. If lab is a tuple with two
+        elements, it indicates the dimensions (number of rows, number of
+        columns) of a Labyrinth made of obstacles. If lab is a string, it
+        represent the Labyrinth, where an 'X' corresponds to an obstacle, and a
+        '.' corresponds to a free cell.
+
+        Example
+        -------
+        lab = '''\
+        xxxxxx
+        x..xxx
+        xx...x
+        xxx.xx
+        x...xx
+        xxxxxx'''
+        l = Labyrinth(lab)
+        """
         if isinstance(lab, tuple):
             self.m = lab[0]
             self.n = lab[1]
@@ -80,12 +150,14 @@ class Labyrinth(object):
         self.G = self.get_graph()
         
     def __str__(self):
+        """String representation of the Laberinth."""
         lines = []
         for row in self.cells:
             lines.append(''.join([('x','.')[r] for r in row]))
         return '\n'.join(lines)
 
     def get_action_space(self):
+        """Return a 2-dimensional list with the actions for each cell."""
         actions = [self.n * [None] for x in range(self.m)]
         m = self.m
         n = self.n
@@ -132,6 +204,7 @@ class Labyrinth(object):
         self.actions = actions
 
     def get_graph(self):
+        """Return the graph representation of the Labyrinth."""
         G = Graph()
         for i in range(self.m):
             for j in range(self.n):
@@ -146,6 +219,22 @@ class Labyrinth(object):
         return G
 
 def forward_search(G, x_I, x_G):
+    """ Compute a path between two nodes of a graph.
+
+    The search is implimented as a forward search, based on the algorithm
+    of Figure 2.4 (p. 28) of LaValle's book.
+
+    Parameters
+    ----------
+    G: Graph to search
+    x_I: Initial vertice in the Graph
+    x_G: Goal vertice
+
+    Returns
+    -------
+    If a path is found, a list with the plan for going from x_I to x_G.
+    If a path is not found, None
+    """
     unvisited = 'unvisited' #0
     dead = 'dead' #1
     alive = 'alive' #2
@@ -160,7 +249,7 @@ def forward_search(G, x_I, x_G):
         x = q.get()
         if x == x_G:
             print 'success!'
-            return (orig, dest)
+            return plan_to_path((orig, dest))
         for node in G.successors(x):
             orig.append(x)
             dest.append(node)
@@ -169,11 +258,23 @@ def forward_search(G, x_I, x_G):
                 q.put(node)
             else:
                 pass # resolve duplicate ?
-                print 'We have a duplicate. What do we do?'
+                #print 'We have a duplicate. What do we do?'
     print 'Failure :('
     return None
 
 def plan_to_path(plan):
+    """Convert the pair of origin->destinations computed by the forward search
+    into a path.
+
+    Parameters
+    ----------
+    plan: A tuple with two lists. The fisrt list contains the origins, and the
+    second one the destinations.
+
+    Return
+    ------
+    A list with the path from the origin to the goal
+    """
     (o, d) = plan
     i = d.index(x_G)
     path = [x_G]
@@ -205,6 +306,5 @@ xxxxxx'''
     x_I = (1,1)
     x_G = (4,3)
     plan = forward_search(l.G, x_I, x_G)
-    path = plan_to_path(plan)
     print path
 

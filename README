@@ -1,0 +1,7 @@
+These programs are a Python implementation of some of the path planning
+algorithms described in the book "Planning algorithms", by Steven LaValle.
+
+They have a didactic purpose. No effort is made in terms of efficency or
+robustnes.
+
+Alejandro Weinstein 2010
