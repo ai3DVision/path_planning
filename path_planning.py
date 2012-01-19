@@ -19,7 +19,7 @@ class Graph(object):
     """
     Class for basic directed graphs.
 
-    For a more sophisticated, look at networkx. 
+    For a much more sophisticated implementation, look at networkx. 
     """
     def __init__(self):
         """Initialize an empty graph."""
@@ -295,16 +295,16 @@ def plan_to_path(plan):
     
 if __name__ == '__main__':
     print 'Testing path planning algorithms...'
-    lab = '''\
-xxxxxx
-x..xxx
-xx...x
-xxx.xx
-x...xx
-xxxxxx'''
+    lab = ('xxxxxx\n'
+           'x..xxx\n'
+           'xx...x\n'
+           'xxx.xx\n'
+           'x...xx\n'
+           'xxxxxx\n')
+
     l = Labyrinth(lab)
     x_I = (1,1)
     x_G = (4,3)
     plan = forward_search(l.G, x_I, x_G)
-    print path
+    print plan
 
