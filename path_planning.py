@@ -38,7 +38,7 @@ class Graph(object):
 
         Parameters
         ----------
-        node: any inmutable object that can be used as a dictionary key
+        node: any immutable object that can be used as a dictionary key
         """
         if self.G.has_key(node) is False:
             self.G[node] = []
