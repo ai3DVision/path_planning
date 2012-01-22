@@ -1,116 +1,7 @@
-import operator
-import Queue
+from heapq import heappop, heappush, nsmallest
 
 import networkx as nx
 
-# From http://norvig.com/python-iaq.html
-class PriorityQueue_old(object):
-    "A queue in which the minimum element (as determined by cmp) is first."
-    def __init__(self, items=None, cmp=operator.lt):
-        self.A = []
-        self.cmp = cmp
-        if items: 
-            self.extend(items)
-      
-    def __len__(self): return len(self.A)
-
-    def append(self, item):
-        A, cmp = self.A, self.cmp
-        A.append(item)
-        i = len(A) - 1
-        while i > 0 and cmp(item, A[i//2]):
-            A[i], i = A[i//2], i//2
-        A[i] = item
-
-    def extend(self, items):
-        for item in items: 
-            self.append(item)
-
-    def pop(self):
-        A = self.A
-        if len(A) == 1: return A.pop()
-        e = A[0]
-        A[0] = A.pop()
-        self.heapify(0)
-        return e
-
-    def heapify(self, i):
-        "Assumes A is an array whose left and right children are heaps,"
-        "move A[i] into the correct position.  See CLR&S p. 130"
-        A, cmp = self.A, self.cmp
-        left, right, N = 2*i + 1, 2*i + 2, len(A)-1
-        if left <= N and cmp(A[left], A[i]):
-            smallest = left
-        else:
-            smallest = i
-        if right <= N and cmp(A[right], A[smallest]):
-            smallest = right
-        if smallest != i:
-            A[i], A[smallest] = A[smallest], A[i]
-            self.heapify(smallest)
-
-class PriorityQueue(object):
-    "A queue in which the minimum element (as determined by cmp) is first."
-    def __init__(self, items=None):
-        self.A = []
-        self.values = {}
-        #self.cmp = cmp
-        self.cmp = lambda x,y: self.values[x] < self.values[y]
-        if items: 
-            self.extend(items)
-      
-    def __len__(self): return len(self.A)
-
-    def append(self, item, value):
-        A, cmp = self.A, self.cmp
-        A.append(item)
-        self.values[item] = value
-        i = len(A) - 1
-        while i > 0 and cmp(item, A[i//2]):
-            A[i], i = A[i//2], i//2
-        A[i] = item
-
-    ## def update(self, item, value):
-    ##     try:
-    ##         self.heapify(self.A.index(item))
-    ##     except ValueError:
-    ##         pass
-    ##     else:
-    ##         self.values[item] = value
-
-    def update(self, item, value):
-        try:
-            self.A.remove(item)
-        except ValueError:
-            pass
-        else:
-            self.append(item, value)
-        
-    def pop(self):
-        A = self.A
-        if len(A) == 1: 
-            self.values.popitem()
-            return A.pop()
-        e = A[0]
-        A[0] = A.pop()
-        self.values.pop(e)
-        self.heapify(0)
-        return e
-
-    def heapify(self, i):
-        "Assumes A is an array whose left and right children are heaps,"
-        "move A[i] into the correct position.  See CLR&S p. 130"
-        A, cmp = self.A, self.cmp
-        left, right, N = 2*i + 1, 2*i + 2, len(A)-1
-        if left <= N and cmp(A[left], A[i]):
-            smallest = left
-        else:
-            smallest = i
-        if right <= N and cmp(A[right], A[smallest]):
-            smallest = right
-        if smallest != i:
-            A[i], A[smallest] = A[smallest], A[i]
-            self.heapify(smallest)
             
 def forward_search(G, x_I, x_G, verbose=False):
     """ Compute a path between two nodes of a graph.
@@ -180,16 +71,23 @@ def dijkstra(G, x_I, x_G, verbose=False):
     If a path is not found, None
     """
 
-    print 'Initial state:', x_I, 'Goal:', x_G
+    if verbose:
+        print 'Initial state:', x_I, 'Goal:', x_G
     pred = {x_I:None}
     cost_to_come = {x_I:0}
-    #fringe = PriorityQueue([(x_I, 0)], lambda x,y: x[1] < y[1])
-    fringe = PriorityQueue()
-    fringe.append(x_I, 0)
-    while len(fringe) > 0:
-        x = fringe.pop()
+    fringe = []
+    heappush(fringe, (0,x_I))
+    visited = []
+    #while len(fringe) > 0: # We may need to check for another condition
+    while len(visited) < len(G):
+        _, x = heappop(fringe)
+        if x in visited:
+            continue
+        else:
+            visited.append(x)
         if x == x_G:
-            print 'success!'
+            if verbose:
+                print 'success!'
             # We obtain the path from pred at the end. It is also used as a
             # list of visited states
             path = [x_G]
@@ -206,17 +104,16 @@ def dijkstra(G, x_I, x_G, verbose=False):
             if y not in pred:
                 pred[y] = x
                 cost_to_come[y] = cost_to_come[x] + w
-                fringe.append(y, cost_to_come[y])
+                heappush(fringe,(cost_to_come[y], y))
             else:
                 if cost_to_come[y] > cost_to_come[x] + w:
                     cost_to_come[y] = cost_to_come[x] + w
-                    fringe.update(y, cost_to_come[y])
+                    heappush(fringe,(cost_to_come[y], y))
                     pred[y] = x
         if verbose:
             print 'Removed from queue:', x 
             print pred
-            print 'Queue', fringe.A
-            print 'values', fringe.values
+            print nsmallest(len(fringe), fringe)
             print '##################################################'
 
     print 'Failure :('
@@ -285,14 +182,9 @@ def experiment_2():
 
 def experiment_3():
     print 'Running experiment 3'
-    ## G = simple_graph()
-    ## start, goal = 1, 5
-    ## path = dijkstra(G, start, goal, verbose=True)
-    ## print path
-
-    n_trials = 1000
+    n_trials = 10
     for _ in range(n_trials):
-        G = nx.gnp_random_graph(25, 0.1)
+        G = nx.gnp_random_graph(1000, 0.1)
         if not nx.is_connected(G):
             continue
         for e1, e2 in G.edges_iter():
@@ -334,6 +226,8 @@ def experiment_4():
     G.add_edge(9, 12, weight=32)
     G.add_edge(10, 14, weight=16)
     G.add_edge(11, 13, weight=86)
+
+    G = nx.read_gpickle('G.gpickle')
     
     path_nx = nx.dijkstra_path(G, 0, 14)
     path = dijkstra(G, 0, 14, True)
